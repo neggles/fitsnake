@@ -79,17 +79,17 @@ def json(
             raise typer.BadParameter("If output path is a file, only one input file can be specified")
 
         try:
-            console.print(f"Converting [bold blue]{path}[/] to [bold yellow]{outfile}[/] ...", end="")
+            console.log(f"Converting [bold blue]{path}[/] to [bold yellow]{outfile}[/] ...", end="")
             messages, errors = decode_file(path)
             if errors:
-                err_console.print(f"Encountered errors decoding {path}:")
+                err_console.log(f"Encountered errors decoding {path}:")
                 for error in errors:
-                    err_console.print(f"    {error}")
+                    err_console.log(f"    {error}")
 
             outfile.write_bytes(orjson.dumps(messages, option=orjson.OPT_INDENT_2 | orjson.OPT_NON_STR_KEYS))
-            console.print(" [bold green]OK[/]")
+            console.log(" [bold green]OK[/]")
         except subprocess.CalledProcessError as e:
-            err_console.print(f"Error converting {path} to {outfile}: {e}")
+            err_console.log(f"Error converting {path} to {outfile}: {e}")
             carryon: str = console.input(prompt="Continue? [Y/N] ", emoji=False)
             if carryon.lower() != "y":
                 raise typer.Abort()
@@ -127,12 +127,12 @@ def xlsx(
             raise typer.BadParameter("If output path is a file, only one input file can be specified")
 
         try:
-            console.print(f"Converting [bold blue]{path}[/] to [bold yellow]{outfile}[/] ...")
+            console.log(f"Converting [bold blue]{path}[/] to [bold yellow]{outfile}[/] ...")
             messages, errors = decode_file(path)
             if errors:
-                err_console.print(f"Encountered errors decoding {path}:")
+                err_console.log(f"Encountered errors decoding {path}:")
                 for error in errors:
-                    err_console.print(f"    {error}")
+                    err_console.log(f"    {error}")
 
             wb = Workbook()
             wb.iso_dates = True
@@ -141,10 +141,10 @@ def xlsx(
 
                 headers = list(dict.fromkeys([x for x in chain(*message_data) if type(x) is not int]))
 
-                console.print(
+                console.log(
                     f"Writing {len(message_data)} rows of {len(headers)} columns to {message_type} sheet"
                 )
-                console.print(f'Headers: {", ".join(headers)}')
+                console.log(f'Headers: {", ".join(headers)}')
                 ws.append(headers)
                 for row in message_data:
                     values = []
@@ -153,13 +153,13 @@ def xlsx(
                         if type(value) is datetime:
                             value = value.isoformat()
                         values.append(value)
-
                     ws.append(values)
+                console.log(f"    [bold green]OK[/]")
 
             wb.save(outfile)
-            console.print(" [bold green]OK[/]")
+            console.log("[bold green]File conversion complete.[/]")
         except subprocess.CalledProcessError as e:
-            err_console.print(f"Error converting {path} to {outfile}: {e}")
+            err_console.log(f"Error converting {path} to {outfile}: {e}")
             carryon: str = console.input(prompt="Continue? [Y/N] ", emoji=False)
             if carryon.lower() != "y":
                 raise typer.Abort()
