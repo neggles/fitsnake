@@ -2,6 +2,7 @@ from datetime import datetime
 import orjson
 import readline
 import subprocess
+from itertools import chain
 from pathlib import Path
 from typing import List, Optional
 
@@ -40,10 +41,6 @@ def decode_file(file: Path, filter: bool = True) -> dict:
         stream: Stream = Stream.from_buffered_reader(f)
         decoder: Decoder = Decoder(stream)
         messages, errors = decoder.read()
-
-    error_strings = "\n    ".join(errors)
-    if errors:
-        err_console.print(f"Errors decoding {file}: {error_strings}")
 
     if filter:
         messages = {k: v for k, v in messages.items() if k in FIT_MSG_TYPES}
@@ -84,6 +81,11 @@ def json(
         try:
             console.print(f"Converting [bold blue]{path}[/] to [bold yellow]{outfile}[/] ...", end="")
             messages, errors = decode_file(path)
+            if errors:
+                err_console.print(f"Encountered errors decoding {path}:")
+                for error in errors:
+                    err_console.print(f"    {error}")
+
             outfile.write_bytes(orjson.dumps(messages, option=orjson.OPT_INDENT_2 | orjson.OPT_NON_STR_KEYS))
             console.print(" [bold green]OK[/]")
         except subprocess.CalledProcessError as e:
@@ -127,16 +129,18 @@ def xlsx(
         try:
             console.print(f"Converting [bold blue]{path}[/] to [bold yellow]{outfile}[/] ...")
             messages, errors = decode_file(path)
-
             if errors:
-                err_console.print(f"Errors decoding {path}: {errors}")
+                err_console.print(f"Encountered errors decoding {path}:")
+                for error in errors:
+                    err_console.print(f"    {error}")
 
             wb = Workbook()
             wb.iso_dates = True
             for message_type, message_data in messages.items():
                 ws = wb.create_sheet(message_type)
 
-                headers = [x for x in message_data[0].keys() if not (type(x) is int or x.isdigit())]
+                headers = list(dict.fromkeys([x for x in chain(*message_data) if type(x) is not int]))
+
                 console.print(
                     f"Writing {len(message_data)} rows of {len(headers)} columns to {message_type} sheet"
                 )
