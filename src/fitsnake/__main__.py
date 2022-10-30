@@ -1,4 +1,4 @@
-from .cli import cli
+from fitsnake.app import app
 
 if __name__ == "__main__":
-    cli()
+    app()
